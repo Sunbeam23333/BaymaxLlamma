@@ -2,5 +2,5 @@ streamlit==1.37.1  # Streamlit 用于创建 Web 应用
 torch==2.4.0  # PyTorch，用于深度学习模型
 transformers==4.30.2  # Hugging Face Transformers 库，用于加载和运行预训练模型
 
-tokenizers==0.13.2  # 使用预编译的版本，避免 Rust 编译器问题
+tokenizers==0.13.3  # 使用预编译的版本，避免 Rust 编译器问题
 
