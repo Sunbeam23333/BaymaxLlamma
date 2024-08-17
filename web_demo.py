@@ -1,5 +1,5 @@
+import os
 import streamlit as st
-from streamlit_chat import message
 import torch
 from transformers import AutoModel, AutoTokenizer, AutoConfig
 import base64
@@ -9,9 +9,12 @@ st.set_page_config(
     page_icon=":robot:"
 )
 
+# 获取当前脚本的目录
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # 添加背景图的CSS
-def add_bg_from_local(image_path):
-    with open(image_path, "rb") as image_file:
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image_file:
         image_bytes = image_file.read()
         encoded_image = base64.b64encode(image_bytes).decode()  # 使用 base64 编码图像数据
     bg_style = f"""
@@ -25,22 +28,23 @@ def add_bg_from_local(image_path):
     st.markdown(bg_style, unsafe_allow_html=True)
 
 # 调用函数添加背景图
-add_bg_from_local(r"D:\BUPT\Models\Llamma1-7b\medicine.png")
+background_image_path = os.path.join(BASE_DIR, "medicine.png")
+add_bg_from_local(background_image_path)
 
 # 添加标题
 st.title("Baymax")
 
 @st.cache_resource
 def get_model():
-    model_path = r"D:\BUPT\Models\Llamma1-7b\modelcheckpoint"
+    model_path = os.path.join(BASE_DIR, "modelcheckpoint")  # 使用相对路径
 
-    # 使用本地路径加载模型配置
+    # 使用相对路径加载模型配置
     config = AutoConfig.from_pretrained(model_path)
 
-    # 使用本地路径加载 Tokenizer
+    # 使用相对路径加载 Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    # 使用本地路径加载模型
+    # 使用相对路径加载模型
     model = AutoModel.from_pretrained(model_path, config=config).half().cuda()
     model = model.eval()
     return tokenizer, model
@@ -48,24 +52,24 @@ def get_model():
 MAX_TURNS = 20
 MAX_BOXES = MAX_TURNS * 2
 
-def predict(input, max_length, top_p, temperature, history=None):
+def predict(input_text, max_length, top_p, temperature, history=None):
     tokenizer, model = get_model()
     if history is None:
         history = []
+
+    # 生成回复
+    inputs = tokenizer(input_text, return_tensors="pt").input_ids.cuda()
+    outputs = model.generate(inputs, max_length=max_length, top_p=top_p, temperature=temperature)
+    response = tokenizer.decode(outputs[:, inputs.shape[-1]:][0], skip_special_tokens=True)
+
+    history.append((input_text, response))
 
     with container:
         if len(history) > MAX_BOXES:
             history = history[-MAX_TURNS:]
         for i, (query, response) in enumerate(history):
-            message(query, avatar_style="big-smile", key=str(i) + "_user")
-            message(response, avatar_style="bottts", key=str(i))
-
-        message(input, avatar_style="big-smile", key=str(len(history)) + "_user")
-        st.write("AI正在回复:")
-        with st.empty():
-            for response, history in model.stream_chat(tokenizer, input, history, max_length=max_length, top_p=top_p, temperature=temperature):
-                query, response = history[-1]
-                st.write(response)
+            st.markdown(f"**User:** {query}")
+            st.markdown(f"**Bot:** {response}")
 
     return history
 
