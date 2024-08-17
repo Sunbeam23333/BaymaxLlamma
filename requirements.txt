@@ -53,7 +53,7 @@ tenacity==8.5.0
 tensorboard==2.16.2
 threadpoolctl==3.3.0
 tokenizers==0.13.3
-torch==2.1.1+cu118
+torch==2.4.0
 torchaudio==2.1.1+cu118
 torchsummary==1.5.1
 torchtoolbox==0.1.8.2
